@@ -5,6 +5,7 @@
 #include "../../xr_3da/xr_object.h"
 
 #include "../xrRender/QueryHelper.h"
+#include "../xrRender/OGSRHiZ.h"
 
 IC bool pred_sp_sort(ISpatial* _1, ISpatial* _2)
 {
@@ -244,6 +245,10 @@ void CRender::Render()
         bSUN = FALSE;
     // Msg						("sstatic: %s, sun: %s",o.sunstatic?;"true":"false", bSUN?"true":"false");
 
+    // Never force a GPU/CPU sync; poll completed HiZ staging buffers only.
+    if (ps_r__hiz > 0)
+        OGSRHiZ::PumpReadback(HW.pContext);
+
     // HOM
     ViewBase.CreateFromMatrix(Device.mFullTransform, FRUSTUM_P_LRTB + FRUSTUM_P_FAR);
     View = 0;
@@ -326,8 +331,20 @@ void CRender::Render()
         PIX_EVENT(DEFER_PART0_NO_SPLIT);
         // level, DO NOT SPLIT
         Target->phase_scene_begin();
-        r_dsgraph_render_hud();
         r_dsgraph_render_graph(0);
+        if (ps_r__hiz > 0 && !o.dx10_msaa && !Device.m_SecondViewport.IsSVPFrame())
+        {
+            // Depth must be unbound from OM before binding it as compute SRV.
+            // Use RCache so its internal tracked state remains coherent.
+            RCache.set_RT(nullptr, 0);
+            RCache.set_RT(nullptr, 1);
+            RCache.set_RT(nullptr, 2);
+            RCache.set_ZB(nullptr);
+            OGSRHiZ::Capture(HW.pDevice, HW.pContext, HW.pBaseZB,
+                Device.mFullTransform, Device.vCameraPosition, Device.vCameraDirection, Device.dwFrame);
+            Target->phase_scene_begin();
+        }
+        r_dsgraph_render_hud();
         r_dsgraph_render_lods(true, true);
         if (Details)
             Details->Render();
@@ -339,6 +356,16 @@ void CRender::Render()
         // level, SPLIT
         Target->phase_scene_begin();
         r_dsgraph_render_graph(0);
+        if (ps_r__hiz > 0 && !o.dx10_msaa && !Device.m_SecondViewport.IsSVPFrame())
+        {
+            RCache.set_RT(nullptr, 0);
+            RCache.set_RT(nullptr, 1);
+            RCache.set_RT(nullptr, 2);
+            RCache.set_ZB(nullptr);
+            OGSRHiZ::Capture(HW.pDevice, HW.pContext, HW.pBaseZB,
+                Device.mFullTransform, Device.vCameraPosition, Device.vCameraDirection, Device.dwFrame);
+            Target->phase_scene_begin();
+        }
         Target->disable_aniso();
     }
 

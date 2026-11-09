@@ -97,6 +97,13 @@ BOOL SimulatorStates::equal(SimulatorStates& S)
     return TRUE;
 }
 
+BOOL SimulatorStates::get_RS(u32 a, u32& b) const
+{
+    for (auto it = States.rbegin(); it != States.rend(); ++it)
+        if (it->type == 0 && it->v1 == a) { b = it->v2; return TRUE; }
+    return FALSE;
+}
+
 void SimulatorStates::clear() { States.clear(); }
 
 #if defined(USE_DX10) || defined(USE_DX11)

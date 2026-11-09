@@ -14,6 +14,7 @@
 #include "../xrRenderDX10/3DFluid/dx103DFluidVolume.h"
 
 #include "../xrRender/FHierrarhyVisual.h"
+#include "../xrRender/MOC.h"
 
 void CRender::level_Load(IReader* fs)
 {
@@ -59,6 +60,7 @@ void CRender::level_Load(IReader* fs)
         {
             CStreamReader* geom = FS.rs_open("$level$", "level.geom");
             R_ASSERT2(geom, "level.geom");
+            OGSRMOC_ClearGeometryCapture();
             LoadBuffers(geom, FALSE);
             LoadSWIs(geom);
             FS.r_close(geom);
@@ -120,6 +122,7 @@ void CRender::level_Unload()
 
     // HOM
     HOM.Unload();
+    OGSRMOC_ClearGeometryCapture();
 
     //*** Details
     Details->Unload();
@@ -228,6 +231,15 @@ void CRender::LoadBuffers(CStreamReader* base_fs, BOOL _alternative)
             //	Check if buffer is less then 2048 kb
             BYTE* pData = xr_alloc<BYTE>(vCount * vSize);
             fs->r(pData, vCount * vSize);
+            if (!_alternative)
+            {
+                u16 posOffset = 0;
+                u8 posType = D3DDECLTYPE_UNUSED;
+                for (const auto& e : _DC[i])
+                    if (e.Stream == 0 && e.Usage == D3DDECLUSAGE_POSITION && e.UsageIndex == 0)
+                    { posOffset = e.Offset; posType = e.Type; break; }
+                OGSRMOC_CaptureVertexBuffer(i, pData, vCount * vSize, vSize, posOffset, posType);
+            }
             dx10BufferUtils::CreateVertexBuffer(&_VB[i], pData, vCount * vSize);
             xr_free(pData);
 
@@ -258,6 +270,8 @@ void CRender::LoadBuffers(CStreamReader* base_fs, BOOL _alternative)
             //	Check if buffer is less then 2048 kb
             BYTE* pData = xr_alloc<BYTE>(iCount * 2);
             fs->r(pData, iCount * 2);
+            if (!_alternative)
+                OGSRMOC_CaptureIndexBuffer(i, reinterpret_cast<const u16*>(pData), iCount);
             dx10BufferUtils::CreateIndexBuffer(&_IB[i], pData, iCount * 2);
             xr_free(pData);
 

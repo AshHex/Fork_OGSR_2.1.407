@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../../xr_3da/IGame_Persistent.h"
+#include "MOC.h"
 
 class occTri;
 
@@ -13,6 +14,7 @@ class CHOM
 #endif
 {
 private:
+    COGSRMOC m_moc;
     xrXRC xrc;
     CDB::MODEL* m_pModel;
     occTri* m_pTris;
@@ -34,6 +36,8 @@ public:
     void Unload();
     void Render(CFrustum& base);
     void Render_ZB();
+    bool MOCActive() const { return m_moc.Active(); }
+    BOOL MOCVisibleMainPadded(const Fbox& box, float pixels) const { return m_moc.VisiblePadded(box, pixels); }
     //	void					Debug		();
 
     void occlude(Fbox2& space) {}

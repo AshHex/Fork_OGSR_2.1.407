@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../xrRender/OGSRHiZ.h"
 #include "r4.h"
 #include "../xrRender/fbasicvisual.h"
 #include "../../xr_3da/xr_object.h"
@@ -423,6 +424,7 @@ void CRender::destroy()
 extern u32 reset_frame;
 void CRender::reset_begin()
 {
+    OGSRHiZ::Reset();
     // Update incremental shadowmap-visibility solver
     // BUG-ID: 10646
     {

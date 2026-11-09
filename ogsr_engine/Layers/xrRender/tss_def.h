@@ -39,6 +39,7 @@ private:
 
 public:
     void set_RS(u32 a, u32 b);
+    BOOL get_RS(u32 a, u32& b) const;
     void set_TSS(u32 a, u32 b, u32 c);
     void set_SAMP(u32 a, u32 b, u32 c);
     BOOL equal(SimulatorStates& S);

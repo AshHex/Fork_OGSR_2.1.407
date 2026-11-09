@@ -3,6 +3,15 @@
 #include "xrRender_console.h"
 #include "dxRenderDeviceRender.h"
 
+// OGSR MOC/HiZ. On legacy renderer r__hiz=2 is experimental (mixed scene depth).
+int ps_r__hiz = 1;
+int ps_r__moc_enable = 1;
+int ps_r__moc_draw = 0;
+int ps_r__moc_source = 1;
+int ps_r__moc_cull_shadows = 0;
+int ps_r__moc_cull_lights = 0;
+int ps_r__moc_shadow_guard = 8;
+
 u32 r2_SmapSize = 2048;
 constexpr xr_token SmapSizeToken[] = {{"1536x1536", 1536},
                                       {"2048x2048", 2048},
@@ -739,6 +748,14 @@ void xrRender_initconsole()
     CMD3(CCC_Mask, "r2_mt", &ps_r2_ls_flags, R2FLAG_EXP_MT_CALC);
 #endif // DEBUG
 
+    // New CPU/GPU occlusion backend, without modifying existing HOM switches.
+    CMD4(CCC_Integer, "r__hiz", &ps_r__hiz, 0, 2);
+    CMD4(CCC_Integer, "r__moc_enable", &ps_r__moc_enable, 0, 1);
+    CMD4(CCC_Integer, "r__moc_draw", &ps_r__moc_draw, 0, 2);
+    CMD4(CCC_Integer, "r__moc_source", &ps_r__moc_source, 0, 1);
+    CMD4(CCC_Integer, "r__moc_cull_shadows", &ps_r__moc_cull_shadows, 0, 1);
+    CMD4(CCC_Integer, "r__moc_cull_lights", &ps_r__moc_cull_lights, 0, 1);
+    CMD4(CCC_Integer, "r__moc_shadow_guard", &ps_r__moc_shadow_guard, 0, 32);
     CMD3(CCC_Mask, "r2_disable_hom", &ps_r2_ls_flags_ext, R2FLAGEXT_DISABLE_HOM);
 
     CMD3(CCC_Mask, "r2_rain_drops", &ps_r2_ls_flags_ext, R2FLAGEXT_RAIN_DROPS);

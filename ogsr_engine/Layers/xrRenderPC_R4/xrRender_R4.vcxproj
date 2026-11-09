@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -71,7 +71,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)\3rd_party\Src\d3dx;..\..\xrCore;..\..\Luabind;..\..\LuaJIT\src;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)\3rd_party\Src\d3dx;..\..\xrCore;..\..\Luabind;..\..\LuaJIT\src;$(SolutionDir)\3rd_party\Src\MaskedOcclusionCulling\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>USE_DX11;WIN32;_WINDOWS;_USRDLL;_SECURE_SCL=0;XRENGINE_STATIC;XRCORE_STATIC;XRCDB_STATIC;XR_PARTICLES_STATIC;LUABIND_STATIC;XRRENDER_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -112,7 +112,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DisableSpecificWarnings>4456;4457;4458;4459;4315;</DisableSpecificWarnings>
       <StringPooling>false</StringPooling>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)\3rd_party\Src\d3dx;..\..\xrCore;..\..\Luabind;..\..\LuaJIT\src;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)\3rd_party\Src\d3dx;..\..\xrCore;..\..\Luabind;..\..\LuaJIT\src;$(SolutionDir)\3rd_party\Src\MaskedOcclusionCulling\include;</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <OmitFramePointers>false</OmitFramePointers>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -137,7 +137,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)\3rd_party\Src\d3dx;..\..\xrCore;..\..\Luabind;..\..\LuaJIT\src;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)\3rd_party\Src\d3dx;..\..\xrCore;..\..\Luabind;..\..\LuaJIT\src;$(SolutionDir)\3rd_party\Src\MaskedOcclusionCulling\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>USE_DX11;WIN32;NDEBUG;_WINDOWS;_USRDLL;_SECURE_SCL=0;XRENGINE_STATIC;XRCORE_STATIC;XRCDB_STATIC;XR_PARTICLES_STATIC;LUABIND_STATIC;XRRENDER_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling />
@@ -171,7 +171,7 @@
       <OmitFramePointers>false</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)\3rd_party\Src\d3dx;..\..\xrCore;..\..\Luabind;..\..\LuaJIT\src;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)\3rd_party\Src\d3dx;..\..\xrCore;..\..\Luabind;..\..\LuaJIT\src;$(SolutionDir)\3rd_party\Src\MaskedOcclusionCulling\include;</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>USE_DX11;WIN32;NDEBUG;_WINDOWS;_USRDLL;_SECURE_SCL=0;XRENGINE_STATIC;XRCORE_STATIC;XRCDB_STATIC;XR_PARTICLES_STATIC;LUABIND_STATIC;XRRENDER_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>
@@ -304,6 +304,8 @@
     <ClInclude Include="..\xrRender\FVF.h" />
     <ClInclude Include="..\xrRender\FVisual.h" />
     <ClInclude Include="..\xrRender\HOM.h" />
+    <ClInclude Include="..\xrRender\MOC.h" />
+    <ClInclude Include="..\xrRender\OGSRHiZ.h" />
     <ClInclude Include="..\xrRender\HW.h" />
     <ClInclude Include="..\xrRender\HWCaps.h" />
     <ClInclude Include="..\xrRender\IRenderDetailModel.h" />
@@ -474,6 +476,22 @@
     <ClCompile Include="..\xrRender\FTreeVisual.cpp" />
     <ClCompile Include="..\xrRender\FVisual.cpp" />
     <ClCompile Include="..\xrRender\HOM.cpp" />
+    <ClCompile Include="..\xrRender\MOC.cpp" />
+    <ClCompile Include="OGSRHiZ.cpp" />
+    <ClCompile Include="..\..\..\3rd_party\Src\MaskedOcclusionCulling\include\MaskedOcclusionCulling.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ObjectFileName>$(IntDir)MOC_%(Filename).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\3rd_party\Src\MaskedOcclusionCulling\include\MaskedOcclusionCullingAVX2.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <ObjectFileName>$(IntDir)MOC_%(Filename).obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\3rd_party\Src\MaskedOcclusionCulling\include\MaskedOcclusionCullingAVX512.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <ObjectFileName>$(IntDir)MOC_%(Filename).obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\xrRender\HWCaps.cpp" />
     <ClCompile Include="..\xrRender\light.cpp" />
     <ClCompile Include="..\xrRender\LightTrack.cpp" />

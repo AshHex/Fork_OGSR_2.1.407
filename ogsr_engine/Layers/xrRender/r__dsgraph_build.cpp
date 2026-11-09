@@ -546,8 +546,18 @@ void CRender::add_leafs_Dynamic(dxRender_Visual* pVisual)
     }
 }
 
+// Optional main-camera MOC rejection in secondary passes. Never used without
+// explicit opt-in: shadow-caster culling can change off-screen silhouettes.
+static bool OGSRMOC_SecondaryHidden(const dxRender_Visual* visual)
+{
+    if (!visual || !RImplementation.HOM.MOCActive()) return false;
+    if (RImplementation.phase != CRender::PHASE_SMAP || !ps_r__moc_cull_shadows) return false;
+    return !RImplementation.HOM.MOCVisibleMainPadded(visual->vis.box, float(ps_r__moc_shadow_guard));
+}
+
 void CRender::add_leafs_Static(dxRender_Visual* pVisual)
 {
+    if (OGSRMOC_SecondaryHidden(pVisual)) return;
     if (!HOM.visible(pVisual->vis))
         return;
 
@@ -722,6 +732,7 @@ BOOL CRender::add_Dynamic(dxRender_Visual* pVisual, u32 planes)
 
 void CRender::add_Static(dxRender_Visual* pVisual, u32 planes)
 {
+    if (OGSRMOC_SecondaryHidden(pVisual)) return;
     // Check frustum visibility and calculate distance to visual's center
     EFC_Visible VIS;
     vis_data& vis = pVisual->vis;

@@ -570,11 +570,11 @@ void CHW::UpdateViews()
     descDepth.Height = sd.BufferDesc.Height;
     descDepth.MipLevels = 1;
     descDepth.ArraySize = 1;
-    descDepth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    descDepth.Format = DXGI_FORMAT_R24G8_TYPELESS; // OGSR HiZ: allow depth SRV, preserve D24S8 DSV
     descDepth.SampleDesc.Count = 1;
     descDepth.SampleDesc.Quality = 0;
     descDepth.Usage = D3D_USAGE_DEFAULT;
-    descDepth.BindFlags = D3D_BIND_DEPTH_STENCIL;
+    descDepth.BindFlags = D3D_BIND_DEPTH_STENCIL | D3D_BIND_SHADER_RESOURCE;
     descDepth.CPUAccessFlags = 0;
     descDepth.MiscFlags = 0;
     R = pDevice->CreateTexture2D(&descDepth, // Texture desc
@@ -583,7 +583,10 @@ void CHW::UpdateViews()
     R_CHK(R);
 
     //	Create Depth/stencil view
-    R = pDevice->CreateDepthStencilView(pDepthStencil, NULL, &pBaseZB);
+    D3D_DEPTH_STENCIL_VIEW_DESC depthView = {};
+    depthView.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthView.ViewDimension = D3D_DSV_DIMENSION_TEXTURE2D;
+    R = pDevice->CreateDepthStencilView(pDepthStencil, &depthView, &pBaseZB);
     R_CHK(R);
 
     pDepthStencil->Release();

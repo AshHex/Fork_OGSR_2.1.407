@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "MOC.h"
 #pragma hdrstop
 
 #pragma warning(disable : 4995)
@@ -43,8 +44,11 @@ void Fvisual::Load(const char* N, IReader* data, u32 dwFlags)
 #ifndef _EDITOR
         // verts
         u32 ID = data->r_u32();
+        m_mocSourceVB = ID;
         vBase = data->r_u32();
         vCount = data->r_u32();
+        m_mocVBase = vBase;
+        m_mocVCount = vCount;
 
         VERIFY(NULL == p_rm_Vertices);
 
@@ -55,8 +59,11 @@ void Fvisual::Load(const char* N, IReader* data, u32 dwFlags)
 
         // indices
         ID = data->r_u32();
+        m_mocSourceIB = ID;
         iBase = data->r_u32();
         iCount = data->r_u32();
+        m_mocIBase = iBase;
+        m_mocICount = iCount;
         dwPrimitives = iCount / 3;
 
         VERIFY(NULL == p_rm_Indices);
@@ -108,8 +115,11 @@ void Fvisual::Load(const char* N, IReader* data, u32 dwFlags)
             R_ASSERT2(0, "pls notify andy about this.");
 #ifndef _EDITOR
             u32 ID = data->r_u32();
+            m_mocSourceVB = ID;
             vBase = data->r_u32();
             vCount = data->r_u32();
+            m_mocVBase = vBase;
+            m_mocVCount = vCount;
             VERIFY(NULL == p_rm_Vertices);
             p_rm_Vertices = RImplementation.getVB(ID);
             p_rm_Vertices->AddRef();
@@ -125,6 +135,24 @@ void Fvisual::Load(const char* N, IReader* data, u32 dwFlags)
             vFormat = dcl;
             vCount = data->r_u32();
             u32 vStride = D3DXGetFVFVertexSize(fvf);
+#if defined(OGSR_USE_INTEL_MOC)
+            // Capture static standalone OGF vertices while CPU memory is available.
+            // Only FLOAT3 POSITION is safe to use as an occluder source.
+            for (u32 k = 0; k < MAX_FVF_DECL_SIZE && dcl[k].Stream != 0xFF; ++k)
+            {
+                const D3DVERTEXELEMENT9& e = dcl[k];
+                if (e.Stream == 0 && e.Usage == D3DDECLUSAGE_POSITION &&
+                    e.UsageIndex == 0 && e.Type == D3DDECLTYPE_FLOAT3 &&
+                    u32(e.Offset) + sizeof(Fvector) <= vStride)
+                {
+                    m_mocLocalVertices.resize(vCount);
+                    const BYTE* p = static_cast<const BYTE*>(data->pointer());
+                    for (u32 n = 0; n < vCount; ++n)
+                        memcpy(&m_mocLocalVertices[n], p + size_t(n) * vStride + e.Offset, sizeof(Fvector));
+                    break;
+                }
+            }
+#endif
 
 #if defined(USE_DX10) || defined(USE_DX11)
             VERIFY(NULL == p_rm_Vertices);
@@ -153,8 +181,11 @@ void Fvisual::Load(const char* N, IReader* data, u32 dwFlags)
             R_ASSERT2(0, "pls notify andy about this.");
 #ifndef _EDITOR
             u32 ID = data->r_u32();
+            m_mocSourceIB = ID;
             iBase = data->r_u32();
             iCount = data->r_u32();
+            m_mocIBase = iBase;
+            m_mocICount = iCount;
             dwPrimitives = iCount / 3;
             VERIFY(NULL == p_rm_Indices);
             p_rm_Indices = RImplementation.getIB(ID);
@@ -167,6 +198,13 @@ void Fvisual::Load(const char* N, IReader* data, u32 dwFlags)
             iBase = 0;
             iCount = data->r_u32();
             dwPrimitives = iCount / 3;
+#if defined(OGSR_USE_INTEL_MOC)
+            if (!m_mocLocalVertices.empty())
+            {
+                const u16* indices = static_cast<const u16*>(data->pointer());
+                m_mocLocalIndices.assign(indices, indices + iCount);
+            }
+#endif
 
 #if defined(USE_DX10) || defined(USE_DX11)
             // BOOL	bSoft		= HW.Caps.geometry.bSoftware || (dwFlags&VLOAD_FORCESOFTWARE);
@@ -247,4 +285,8 @@ void Fvisual::Copy(dxRender_Visual* pSrc)
     PCOPY(dwPrimitives);
 
     PCOPY(m_fast);
+    PCOPY(m_mocSourceVB); PCOPY(m_mocSourceIB);
+    PCOPY(m_mocVBase); PCOPY(m_mocVCount);
+    PCOPY(m_mocIBase); PCOPY(m_mocICount);
+    PCOPY(m_mocLocalVertices); PCOPY(m_mocLocalIndices);
 }

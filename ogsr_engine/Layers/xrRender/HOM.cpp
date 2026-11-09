@@ -8,6 +8,9 @@
 #include "../../xr_3da/GameFont.h"
 
 #include "dxRenderDeviceRender.h"
+#if defined(RENDER) && (RENDER == R_R4)
+#include "OGSRHiZ.h"
+#endif
 
 float psOSSR = .001f;
 
@@ -66,12 +69,15 @@ IC float Area(Fvector& v0, Fvector& v1, Fvector& v2)
 
 void CHOM::Load()
 {
+    const bool moc_loaded = m_moc.Load();
     // Find and open file
     string_path fName;
     FS.update_path(fName, "$level$", "level.hom");
     if (!FS.exist(fName))
     {
         Msg(" WARNING: Occlusion map '%s' not found.", fName);
+        // Generated AutoHOM remains usable even without an authored level.hom.
+        bEnabled = moc_loaded ? TRUE : FALSE;
         return;
     }
     Msg("* Loading HOM: %s", fName);
@@ -125,6 +131,10 @@ void CHOM::Load()
 
 void CHOM::Unload()
 {
+#if defined(RENDER) && (RENDER == R_R4)
+    OGSRHiZ::Reset();
+#endif
+    m_moc.Unload();
     xr_delete(m_pModel);
     xr_free(m_pTris);
     bEnabled = FALSE;
@@ -237,6 +247,15 @@ void CHOM::Render_DB(CFrustum& base)
 
 void CHOM::Render(CFrustum& base)
 {
+    // MOC keeps an immutable per-frame snapshot, unlike the old global Raster.
+    // Called from either the existing MT_RENDER worker or synchronous Render().
+    if (m_moc.Active())
+    {
+        if (bEnabled && !ps_r2_ls_flags_ext.test(R2FLAGEXT_DISABLE_HOM))
+            m_moc.Build(base);
+        MT_frame_rendered = Device.dwFrame;
+        return;
+    }
     if (!bEnabled || ps_r2_ls_flags_ext.test(R2FLAGEXT_DISABLE_HOM))
         return;
 
@@ -307,6 +326,8 @@ IC BOOL _visible(Fbox& B, Fmatrix& m_xform_01)
 
 BOOL CHOM::visible(Fbox3& B)
 {
+    if (m_moc.Active())
+        return bEnabled && !ps_r2_ls_flags_ext.test(R2FLAGEXT_DISABLE_HOM) ? m_moc.Visible(B) : TRUE;
     if (!bEnabled || ps_r2_ls_flags_ext.test(R2FLAGEXT_DISABLE_HOM))
         return TRUE;
     if (B.contains(Device.vCameraPosition))
@@ -316,6 +337,8 @@ BOOL CHOM::visible(Fbox3& B)
 
 BOOL CHOM::visible(Fbox2& B, float depth)
 {
+    // Intel MOC has no clip-space box+depth overload; conservatively fail open.
+    if (m_moc.Active()) return TRUE;
     if (!bEnabled || ps_r2_ls_flags_ext.test(R2FLAGEXT_DISABLE_HOM))
         return TRUE;
     return Raster.test(B.min.x, B.min.y, B.max.x, B.max.y, depth);
@@ -323,6 +346,14 @@ BOOL CHOM::visible(Fbox2& B, float depth)
 
 BOOL CHOM::visible(vis_data& vis)
 {
+    if (!bEnabled || ps_r2_ls_flags_ext.test(R2FLAGEXT_DISABLE_HOM)) return TRUE;
+#if defined(RENDER) && (RENDER == R_R4)
+    // Do not cull in shadow/reflection passes using main-camera GPU depth.
+    if (RImplementation.phase == CRender::PHASE_NORMAL &&
+        !Device.m_SecondViewport.IsSVPFrame() && OGSRHiZ::Occluded(vis.box))
+        return FALSE;
+#endif
+    if (m_moc.Active()) return m_moc.Visible(vis.box);
     if (Device.dwFrame < vis.hom_frame)
         return TRUE; // not at this time :)
     if (!bEnabled || ps_r2_ls_flags_ext.test(R2FLAGEXT_DISABLE_HOM))
@@ -360,6 +391,8 @@ BOOL CHOM::visible(vis_data& vis)
 
 BOOL CHOM::visible(sPoly& P)
 {
+    if (m_moc.Active())
+        return bEnabled && !ps_r2_ls_flags_ext.test(R2FLAGEXT_DISABLE_HOM) ? m_moc.Visible(P) : TRUE;
     if (!bEnabled || ps_r2_ls_flags_ext.test(R2FLAGEXT_DISABLE_HOM))
         return TRUE;
 
@@ -377,11 +410,12 @@ BOOL CHOM::visible(sPoly& P)
 
 void CHOM::Disable() { bEnabled = FALSE; }
 
-void CHOM::Enable() { bEnabled = m_pModel ? TRUE : FALSE; }
+void CHOM::Enable() { bEnabled = (m_pModel || m_moc.Active()) ? TRUE : FALSE; }
 
 #ifdef DEBUG
 void CHOM::OnRender()
 {
+    m_moc.DebugDraw();
     Raster.on_dbg_render();
 
     if (psDeviceFlags.is(rsOcclusionDraw))
@@ -444,6 +478,10 @@ void CHOM::OnRender()
 }
 void CHOM::stats()
 {
+    if (m_moc.Active()) m_moc.Stats(*Device.Statistic->Font());
+#if defined(RENDER) && (RENDER == R_R4)
+    if (ps_r__hiz) OGSRHiZ::Stats(*Device.Statistic->Font());
+#endif
     if (m_pModel)
     {
         CGameFont& F = *Device.Statistic->Font();

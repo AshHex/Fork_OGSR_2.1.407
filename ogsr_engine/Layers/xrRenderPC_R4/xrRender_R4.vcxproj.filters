@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Kernel">
@@ -381,6 +381,8 @@
     <ClInclude Include="..\xrRender\r__sector.h">
       <Filter>Visibility\Sector/Portal</Filter>
     </ClInclude>
+    <ClInclude Include="..\xrRender\MOC.h"><Filter>VisibilityHOM Occlusion</Filter></ClInclude>
+    <ClInclude Include="..\xrRender\OGSRHiZ.h"><Filter>VisibilityHOM Occlusion</Filter></ClInclude>
     <ClInclude Include="..\xrRender\HOM.h">
       <Filter>Visibility\HOM Occlusion</Filter>
     </ClInclude>
@@ -974,6 +976,11 @@
     <ClCompile Include="..\xrRender\r__sector_traversal.cpp">
       <Filter>Visibility\Sector/Portal</Filter>
     </ClCompile>
+    <ClCompile Include="..\xrRender\MOC.cpp"><Filter>VisibilityHOM Occlusion</Filter></ClCompile>
+    <ClCompile Include="OGSRHiZ.cpp"><Filter>VisibilityHOM Occlusion</Filter></ClCompile>
+    <ClCompile Include="..\..\..\3rd_party\Src\MaskedOcclusionCulling\include\MaskedOcclusionCulling.cpp"><Filter>VisibilityHOM Occlusion</Filter></ClCompile>
+    <ClCompile Include="..\..\..\3rd_party\Src\MaskedOcclusionCulling\include\MaskedOcclusionCullingAVX2.cpp"><Filter>VisibilityHOM Occlusion</Filter></ClCompile>
+    <ClCompile Include="..\..\..\3rd_party\Src\MaskedOcclusionCulling\include\MaskedOcclusionCullingAVX512.cpp"><Filter>VisibilityHOM Occlusion</Filter></ClCompile>
     <ClCompile Include="..\xrRender\HOM.cpp">
       <Filter>Visibility\HOM Occlusion</Filter>
     </ClCompile>
